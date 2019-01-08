@@ -1,13 +1,10 @@
 import sys
-from isbntools.app import *
-
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
             QMessageBox, QAction, QTableWidget, QTableWidgetItem, QLineEdit,
             QVBoxLayout, QHBoxLayout, QInputDialog, QPlainTextEdit,
             QLabel)
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QIcon, QPixmap
-
 from book_entry import *
 from book_db import *
 
@@ -82,6 +79,7 @@ class App(QWidget):
         self.tableWidget.setHorizontalHeaderLabels(["Title", "Author", "Publisher", "Year", "Language", "ISBN"])
         self.tableWidget.cellClicked.connect(self.table_on_click)
         count = 0
+        # Populate table
         for entry in book_db.book_entries:
             self.tableWidget.setItem(count,0, QTableWidgetItem(entry.title))
             authors = stringListToCommaSeparatedString(entry.authors)
@@ -91,6 +89,14 @@ class App(QWidget):
             self.tableWidget.setItem(count,4, QTableWidgetItem(entry.language))
             self.tableWidget.setItem(count,5, QTableWidgetItem(entry.isbn))
             count += 1
+        # Make table uneditable but selectable
+        num_rows = self.tableWidget.rowCount()
+        num_cols = self.tableWidget.columnCount()
+        for i in range(num_rows):
+            for j in range(num_cols):
+                cell = self.tableWidget.item(i, j)
+                if cell:
+                    cell.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
 
     @pyqtSlot()
@@ -109,11 +115,6 @@ class App(QWidget):
             self.tableWidget.setItem(new_index,3, QTableWidgetItem(entry.publication_year))
             self.tableWidget.setItem(new_index,4, QTableWidgetItem(entry.language))
             self.tableWidget.setItem(new_index,5, QTableWidgetItem(entry.isbn))
-            # address = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + entry.isbn
-            # with urllib.request.urlopen(address) as url:
-            #     data = json.loads(url.read().decode())
-            #     img_link = data['items'][0]['volumeInfo']['imageLinks']['thumbnail']
-            #     urllib.request.urlretrieve(img_link, "img/" + entry.isbn + ".jpg")
 
 
     @pyqtSlot()
@@ -129,8 +130,6 @@ class App(QWidget):
             isbn = self.tableWidget.item(row, isbn_index).text()
             self.book_db.delete_book(isbn)
             self.tableWidget.removeRow(row)
-
-
 
 if __name__ == "__main__":
     book_db = BookDB()

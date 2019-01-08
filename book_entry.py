@@ -1,5 +1,6 @@
 from isbntools.app import *
-import urllib, json
+import urllib, json, datetime
+
 
 class BookEntry:
     def __init__(self):
@@ -11,6 +12,7 @@ class BookEntry:
         self.language = ""
         self.descrption = ""
         self.cover = ""
+        self.time_added = datetime.datetime(1, 1, 1)
 
     # isbn13 must be a valid ISBN
     def getInfo(self, isbn13):
@@ -26,6 +28,7 @@ class BookEntry:
         with urllib.request.urlopen(address) as url:
             data = json.loads(url.read().decode())
             self.cover = data['items'][0]['volumeInfo']['imageLinks']['thumbnail']
+        self.time_added = datetime.datetime.now()
 
     def __str__(self):
         output = "Title: " + self.title + "\n"

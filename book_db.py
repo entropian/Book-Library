@@ -21,6 +21,7 @@ class BookDB:
             book_entry.cover = row[6]
             self.book_entries.append(book_entry)
             book_entry.description = self.getDesc(book_entry.isbn)
+            book_entry.time_added = row[7]
 
     def getCoverFilename(self, isbn):
         for entry in self.book_entries:
@@ -45,8 +46,8 @@ class BookDB:
         urllib.request.urlretrieve(book_entry.cover, local_cover)
         book_entry.cover = local_cover
 
-        query1 = "INSERT INTO book(title, isbn, authors, publisher, year, language, cover) "\
-                "VALUES(%s, %s, %s, %s, %s, %s, %s)"
+        query1 = "INSERT INTO book(title, isbn, authors, publisher, year, language, cover, time_added) "\
+                "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
         authors = ""
         if len(book_entry.authors) > 1:
             for name in book_entry.authors[:-1]:
@@ -55,9 +56,10 @@ class BookDB:
                 authors += name
         else:
             authors += book_entry.authors[0]
+        datetime_str = str(book_entry.time_added).split(".")[0]
         args1 = (book_entry.title, book_entry.isbn, authors, \
                 book_entry.publisher, book_entry.publication_year, \
-                book_entry.language, book_entry.cover)
+                book_entry.language, book_entry.cover, datetime_str)
 
         query2 = "INSERT INTO description(isbn, description) "\
                 "VALUES(%s, %s)"

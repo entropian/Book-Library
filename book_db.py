@@ -23,6 +23,9 @@ class BookDB:
             book_entry.description = self.getDesc(book_entry.isbn)
             book_entry.time_added = row[7]
 
+    def sortByTitle(self):
+        self.book_entries.sort(key=lambda entry: entry.title)
+
     def getCoverFilename(self, isbn):
         for entry in self.book_entries:
             if isbn == entry.isbn:

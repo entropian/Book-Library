@@ -34,6 +34,7 @@ class App(QWidget):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
+        # Table portion
         self.createTableFromEntries(self.book_db.book_entries)
         table_layout = QVBoxLayout()
         table_layout.addWidget(self.tableWidget)
@@ -44,6 +45,7 @@ class App(QWidget):
         table_layout.addWidget(self.add_button)
         table_layout.addWidget(self.del_button)
 
+        # Detail portion
         detail_layout = QVBoxLayout()
         self.cover_display = QLabel(self)
         self.cover_display.setAlignment(Qt.AlignCenter)
@@ -69,15 +71,7 @@ class App(QWidget):
             desc = "Description: " + desc
             self.desc_edit.setPlainText(desc.replace("\n", ""))
 
-    def createTableFromEntries(self, book_entries):
-        self.tableWidget = QTableWidget()
-        self.tableWidget.setRowCount(len(book_entries))
-        self.tableWidget.setColumnCount(6)
-        self.tableWidget.setColumnWidth(0, 250)
-        self.tableWidget.setColumnWidth(3, 50)
-        self.tableWidget.setColumnWidth(4, 70)
-        self.tableWidget.setHorizontalHeaderLabels(["Title", "Author", "Publisher", "Year", "Language", "ISBN"])
-        self.tableWidget.cellClicked.connect(self.table_on_click)
+    def populateTable(self):
         count = 0
         # Populate table
         for entry in book_db.book_entries:
@@ -97,6 +91,24 @@ class App(QWidget):
                 cell = self.tableWidget.item(i, j)
                 if cell:
                     cell.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+
+    def table_header_on_click(self, logicalIndex):
+        if logicalIndex == 0:
+            book_db.sortByTitle()
+            self.tableWidget.clearContents()
+            self.populateTable()
+
+    def createTableFromEntries(self, book_entries):
+        self.tableWidget = QTableWidget()
+        self.tableWidget.setRowCount(len(book_entries))
+        self.tableWidget.setColumnCount(6)
+        self.tableWidget.setColumnWidth(0, 250)
+        self.tableWidget.setColumnWidth(3, 50)
+        self.tableWidget.setColumnWidth(4, 70)
+        self.tableWidget.setHorizontalHeaderLabels(["Title", "Author", "Publisher", "Year", "Language", "ISBN"])
+        self.tableWidget.cellClicked.connect(self.table_on_click)
+        self.tableWidget.horizontalHeader().sectionClicked.connect(self.table_header_on_click)
+        self.populateTable()
 
 
     @pyqtSlot()

@@ -2,23 +2,13 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
             QMessageBox, QAction, QTableWidget, QTableWidgetItem, QLineEdit,
             QVBoxLayout, QHBoxLayout, QInputDialog, QPlainTextEdit,
-            QLabel, QLineEdit)
+            QLabel, QLineEdit, QRadioButton)
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from book_entry import *
 from book_db import *
 
-def stringListToCommaSeparatedString(str_list):
-    output = ""
-    if len(str_list) > 1:
-        for str in str_list[:-1]:
-            output += str + ", "
-        else:
-            output += str
-        return output
-    else:
-        output += str_list[0]
-        return output
+
 
 class App(QWidget):
     def __init__(self, book_db):
@@ -26,7 +16,7 @@ class App(QWidget):
         self.title = "My Library"
         self.left = 200
         self.top = 200
-        self.width = 820
+        self.width = 900
         self.height = 600
         self.book_db = book_db
 
@@ -35,10 +25,21 @@ class App(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         # Table portion
+        search_layout = QHBoxLayout()
+        search_label = QLabel("Search:")
         self.search_bar = QLineEdit()
         self.search_bar.textChanged.connect(self.search_bar_on_click)
+        search_by_title_button = QRadioButton("by title")
+        search_by_title_button.setChecked(True)
+        search_by_title_button.toggled.connect(self.by_title_on_toggle)
+        search_by_author_button = QRadioButton("by author")
+        search_by_author_button.toggled.connect(self.by_author_on_toggle)
+        search_layout.addWidget(search_label)
+        search_layout.addWidget(self.search_bar)
+        search_layout.addWidget(search_by_title_button)
+        search_layout.addWidget(search_by_author_button)
         table_layout = QVBoxLayout()
-        table_layout.addWidget(self.search_bar)
+        table_layout.addLayout(search_layout)
         self.createTable()
         table_layout.addWidget(self.tableWidget)
         self.add_button = QPushButton("Add", self)
@@ -64,6 +65,14 @@ class App(QWidget):
 
         self.show()
 
+    def by_title_on_toggle(self, checked):
+        if checked:
+            self.book_db.setSearchByTitle()
+
+    def by_author_on_toggle(self, checked):
+        if checked:
+            self.book_db.setSearchByAuthor()
+
     def search_bar_on_click(self, text):
         self.book_db.search_str = text.lower()
         self.populateTable()
@@ -76,9 +85,10 @@ class App(QWidget):
         detail_text = ""
         detail_text += ("Authors: " if len(book_entry.authors) > 1 else "Author: ") + stringListToCommaSeparatedString(book_entry.authors) + "\n"
         detail_text += "Publisher: " + book_entry.publisher + "\n"
+        detail_text += "ISBN: " + book_entry.isbn + "\n"
         desc = book_db.getDesc(isbn)
         if desc:
-            detail_text += "Description: " + desc.replace("\n", "")
+            detail_text += "Description: " + desc.replace("\n", " ")
         self.desc_edit.setPlainText(detail_text)
 
     def populateTable(self):

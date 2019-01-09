@@ -3,6 +3,16 @@ import mysql.connector
 from mysql.connector import MySQLConnection, Error
 from book_entry import *
 
+def stringListToCommaSeparatedString(str_list):
+    output = ""
+    if len(str_list) > 1:
+        for str in str_list[:-1]:
+            output += str + ", "
+        output += str_list[-1]
+    else:
+        output += str_list[0]
+    return output
+
 class BookDB:
     def __init__(self):
         self.conn = MySQLConnection(host='localhost', user='root', password='qwe4ASD^',\
@@ -10,9 +20,6 @@ class BookDB:
         self.cursor = self.conn.cursor()
         rows = self.query_with_fetchall()
         self.book_entries = []
-        # Sortable attributes: title, author, publisher, publish_year, language, isbn
-        # TODO: add time_added
-        self.sort_attr_order_flags = [False, False, False, False, False, False, False]
         for row in rows:
             book_entry = BookEntry()
             book_entry.title = row[0]
@@ -25,14 +32,35 @@ class BookDB:
             self.book_entries.append(book_entry)
             book_entry.description = self.getDesc(book_entry.isbn)
             book_entry.time_added = row[7]
+        # Sortable attributes: title, author, publisher, publish_year, language, isbn
+        # TODO: add time_added
+        self.sort_attr_order_flags = [False, False, False, False, False, False, False]
         self.search_str = ""
+        self.search_type = 0    # 0 = by title, 1 = by author
+
+    def setSearchByTitle(self):
+        self.search_type = 0
+
+    def setSearchByAuthor(self):
+        self.search_type = 1
 
     # return book_entries that fit the search criteria
     def getBookEntries(self):
         output = []
-        for entry in self.book_entries:
-            if entry.title.lower().find(self.search_str) != -1:
-                output.append(entry)
+        if self.search_type == 0:
+            for entry in self.book_entries:
+                if entry.title.lower().find(self.search_str) != -1:
+                    output.append(entry)
+        elif self.search_type == 1:
+            for entry in self.book_entries:
+                if type(entry.authors) == list:
+                    for author in entry.authors:
+                        if author.lower().find(self.search_str) != -1:
+                            output.append(entry)
+                            break
+                else:
+                    if entry.authors.lower().find(self.search_str) != -1:
+                        output.append(entry)
         return output
 
     def sortByAttr(self, index):
@@ -74,13 +102,12 @@ class BookDB:
         query1 = "INSERT INTO book(title, isbn, authors, publisher, year, language, cover, time_added) "\
                 "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
         authors = ""
+        print(book_entry.authors)
         if len(book_entry.authors) > 1:
-            for name in book_entry.authors[:-1]:
-                authors += name + ", "
-            else:
-                authors += name
+            authors = stringListToCommaSeparatedString(book_entry.authors)
         else:
             authors += book_entry.authors[0]
+        print(authors)
         datetime_str = str(book_entry.time_added).split(".")[0]
         args1 = (book_entry.title, book_entry.isbn, authors, \
                 book_entry.publisher, book_entry.publication_year, \

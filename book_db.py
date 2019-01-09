@@ -10,6 +10,10 @@ class BookDB:
         self.cursor = self.conn.cursor()
         rows = self.query_with_fetchall()
         self.book_entries = []
+        # Sortable attributes: title, author, publisher, publish_year, language, isbn
+        # TODO: add time_added
+        # NOTE: serious semantic coupling
+        self.sort_attr_order_flags = [False, False, False, False, False, False, False]
         for row in rows:
             book_entry = BookEntry()
             book_entry.title = row[0]
@@ -23,8 +27,23 @@ class BookDB:
             book_entry.description = self.getDesc(book_entry.isbn)
             book_entry.time_added = row[7]
 
-    def sortByTitle(self):
-        self.book_entries.sort(key=lambda entry: entry.title)
+    def sortByAttr(self, index):
+        if index == 0:
+            self.book_entries.sort(key=lambda entry: entry.title, reverse=self.sort_attr_order_flags[index])
+        elif index == 1:
+            self.book_entries.sort(key=lambda entry: entry.authors, reverse=self.sort_attr_order_flags[index])
+        elif index == 2:
+            self.book_entries.sort(key=lambda entry: entry.publisher, reverse=self.sort_attr_order_flags[index])
+        elif index == 3:
+            self.book_entries.sort(key=lambda entry: entry.publish_year, reverse=self.sort_attr_order_flags[index])
+        elif index == 4:
+            self.book_entries.sort(key=lambda entry: entry.language, reverse=self.sort_attr_order_flags[index])
+        elif index == 5:
+            self.book_entries.sort(key=lambda entry: entry.isbn, reverse=self.sort_attr_order_flags[index])
+        self.sort_attr_order_flags[index] = not self.sort_attr_order_flags[index]
+
+    def getDisplayColumnNames(self):
+        return ["Title", "Author", "Publisher", "Year", "Language", "ISBN"]
 
     def getCoverFilename(self, isbn):
         for entry in self.book_entries:

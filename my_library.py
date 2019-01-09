@@ -93,20 +93,19 @@ class App(QWidget):
                     cell.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
 
     def table_header_on_click(self, logicalIndex):
-        if logicalIndex == 0:
-            book_db.sortByTitle()
-            self.tableWidget.clearContents()
-            self.populateTable()
+        self.book_db.sortByAttr(logicalIndex)
+        self.populateTable()
 
     def createTableFromEntries(self, book_entries):
         self.tableWidget = QTableWidget()
         self.tableWidget.setRowCount(len(book_entries))
-        self.tableWidget.setColumnCount(6)
         self.tableWidget.setColumnWidth(0, 250)
         self.tableWidget.setColumnWidth(3, 50)
         self.tableWidget.setColumnWidth(4, 70)
-        self.tableWidget.setHorizontalHeaderLabels(["Title", "Author", "Publisher", "Year", "Language", "ISBN"])
         self.tableWidget.cellClicked.connect(self.table_on_click)
+        header_names = self.book_db.getDisplayColumnNames()
+        self.tableWidget.setColumnCount(len(header_names))
+        self.tableWidget.setHorizontalHeaderLabels(header_names)
         self.tableWidget.horizontalHeader().sectionClicked.connect(self.table_header_on_click)
         self.populateTable()
 

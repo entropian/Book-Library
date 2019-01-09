@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
             QMessageBox, QAction, QTableWidget, QTableWidgetItem, QLineEdit,
             QVBoxLayout, QHBoxLayout, QInputDialog, QPlainTextEdit,
-            QLabel, QLineEdit, QRadioButton)
+            QLabel, QLineEdit, QRadioButton, QMessageBox)
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from book_entry import *
@@ -137,17 +137,22 @@ class App(QWidget):
         isbn, okPressed = QInputDialog.getText(self, "Add book", "ISBN:", QLineEdit.Normal, "")
         if okPressed and isbn != '':
             entry = BookEntry()
-            entry.getInfo(isbn)
-            self.tableWidget.insertRow(new_index)
-            self.book_db.insert_book(entry)
-            self.tableWidget.setItem(new_index,0, QTableWidgetItem(entry.title))
-            authors = stringListToCommaSeparatedString(entry.authors)
-            self.tableWidget.setItem(new_index,1, QTableWidgetItem(authors))
-            self.tableWidget.setItem(new_index,2, QTableWidgetItem(entry.publisher))
-            self.tableWidget.setItem(new_index,3, QTableWidgetItem(entry.publication_year))
-            self.tableWidget.setItem(new_index,4, QTableWidgetItem(entry.language))
-            self.tableWidget.setItem(new_index,5, QTableWidgetItem(entry.isbn))
-
+            if entry.getInfo(isbn):
+                self.tableWidget.insertRow(new_index)
+                self.book_db.insert_book(entry)
+                self.tableWidget.setItem(new_index,0, QTableWidgetItem(entry.title))
+                authors = stringListToCommaSeparatedString(entry.authors)
+                self.tableWidget.setItem(new_index,1, QTableWidgetItem(authors))
+                self.tableWidget.setItem(new_index,2, QTableWidgetItem(entry.publisher))
+                self.tableWidget.setItem(new_index,3, QTableWidgetItem(entry.publication_year))
+                self.tableWidget.setItem(new_index,4, QTableWidgetItem(entry.language))
+                self.tableWidget.setItem(new_index,5, QTableWidgetItem(entry.isbn))
+            else:
+                alert = QMessageBox()
+                alert.setStyleSheet("QLabel{min-width: 100px;}")
+                alert.setWindowTitle("Error")
+                alert.setText("Invalid ISBN")
+                alert.exec_()
 
     @pyqtSlot()
     def del_on_click(self):
@@ -155,6 +160,12 @@ class App(QWidget):
         rows = set()
         for item in selected_items:
             rows.add(item.row())
+        if len(rows) > 1:
+            qm = QMessageBox()
+            qm.setWindowTitle("My Library")
+            ret = qm.question(self, '', "Delete multiple entries?", qm.Yes | qm.No)
+            if ret == qm.No:
+                return
         rows = list(rows)
         rows.sort(reverse=True)
         for row in rows:

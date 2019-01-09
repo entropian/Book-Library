@@ -102,12 +102,10 @@ class BookDB:
         query1 = "INSERT INTO book(title, isbn, authors, publisher, year, language, cover, time_added) "\
                 "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
         authors = ""
-        print(book_entry.authors)
         if len(book_entry.authors) > 1:
             authors = stringListToCommaSeparatedString(book_entry.authors)
         else:
             authors += book_entry.authors[0]
-        print(authors)
         datetime_str = str(book_entry.time_added).split(".")[0]
         args1 = (book_entry.title, book_entry.isbn, authors, \
                 book_entry.publisher, book_entry.publication_year, \

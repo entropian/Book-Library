@@ -12,7 +12,6 @@ class BookDB:
         self.book_entries = []
         # Sortable attributes: title, author, publisher, publish_year, language, isbn
         # TODO: add time_added
-        # NOTE: serious semantic coupling
         self.sort_attr_order_flags = [False, False, False, False, False, False, False]
         for row in rows:
             book_entry = BookEntry()
@@ -26,6 +25,15 @@ class BookDB:
             self.book_entries.append(book_entry)
             book_entry.description = self.getDesc(book_entry.isbn)
             book_entry.time_added = row[7]
+        self.search_str = ""
+
+    # return book_entries that fit the search criteria
+    def getBookEntries(self):
+        output = []
+        for entry in self.book_entries:
+            if entry.title.lower().find(self.search_str) != -1:
+                output.append(entry)
+        return output
 
     def sortByAttr(self, index):
         if index == 0:
@@ -45,10 +53,10 @@ class BookDB:
     def getDisplayColumnNames(self):
         return ["Title", "Author", "Publisher", "Year", "Language", "ISBN"]
 
-    def getCoverFilename(self, isbn):
+    def getEntryFromISBN(self, isbn):
         for entry in self.book_entries:
             if isbn == entry.isbn:
-                return entry.cover
+                return entry
 
     def getDesc(self, isbn):
         query = "SELECT * FROM description WHERE isbn = " + isbn + ";"
@@ -56,11 +64,6 @@ class BookDB:
         entry = self.cursor.fetchone()
         if entry:
             return entry[1]
-
-    def delDesc(self, isbn):
-        query = "DELETE FROM description WHERE isbn = " + isbn + ";"
-        self.cursor.execute(query)
-        self.conn.commit()
 
     def insert_book(self, book_entry):
         # Download cover image
@@ -97,12 +100,13 @@ class BookDB:
             self.book_entries.append(book_entry)
 
     def delete_book(self, isbn):
-        query = "DELETE FROM book WHERE isbn = " + isbn + ";"
         try:
-            self.delDesc(isbn)
+            query = "DELETE FROM description WHERE isbn = " + isbn + ";"
+            self.cursor.execute(query)
             cover_file = "img/" + isbn + ".jpg"
             if os.path.exists(cover_file):
                 os.remove(cover_file)
+            query = "DELETE FROM book WHERE isbn = " + isbn + ";"
             self.cursor.execute(query)
             self.conn.commit()
         except Error as error:
@@ -111,7 +115,6 @@ class BookDB:
             for entry in self.book_entries:
                 if entry.isbn == isbn:
                     self.book_entries.remove(entry)
-
 
     def query_with_fetchall(self):
         try:

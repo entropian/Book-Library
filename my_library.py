@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
             QMessageBox, QAction, QTableWidget, QTableWidgetItem, QLineEdit,
             QVBoxLayout, QHBoxLayout, QInputDialog, QPlainTextEdit,
-            QLabel)
+            QLabel, QLineEdit)
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from book_entry import *
@@ -35,8 +35,11 @@ class App(QWidget):
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         # Table portion
-        self.createTableFromEntries(self.book_db.book_entries)
+        self.search_bar = QLineEdit()
+        self.search_bar.textChanged.connect(self.search_bar_on_click)
         table_layout = QVBoxLayout()
+        table_layout.addWidget(self.search_bar)
+        self.createTable()
         table_layout.addWidget(self.tableWidget)
         self.add_button = QPushButton("Add", self)
         self.add_button.clicked.connect(self.add_on_click)
@@ -61,20 +64,38 @@ class App(QWidget):
 
         self.show()
 
+    def search_bar_on_click(self, text):
+        self.book_db.search_str = text.lower()
+        self.populateTable()
+
     def table_on_click(self, row, column):
         isbn_index = 5
         isbn = self.tableWidget.item(row, isbn_index).text()
-        cover_file = self.book_db.getCoverFilename(isbn)
-        self.cover_display.setPixmap(QPixmap(cover_file))
+        book_entry = self.book_db.getEntryFromISBN(isbn)
+        self.cover_display.setPixmap(QPixmap(book_entry.cover))
+        detail_text = ""
+        detail_text += ("Authors: " if len(book_entry.authors) > 1 else "Author: ") + stringListToCommaSeparatedString(book_entry.authors) + "\n"
+        detail_text += "Publisher: " + book_entry.publisher + "\n"
         desc = book_db.getDesc(isbn)
         if desc:
-            desc = "Description: " + desc
-            self.desc_edit.setPlainText(desc.replace("\n", ""))
+            detail_text += "Description: " + desc.replace("\n", "")
+        self.desc_edit.setPlainText(detail_text)
 
     def populateTable(self):
+        book_entries = self.book_db.getBookEntries()
+        self.tableWidget.clear()
+        self.tableWidget.setRowCount(len(book_entries))
+        self.tableWidget.cellClicked.connect(self.table_on_click)
+        header_names = self.book_db.getDisplayColumnNames()
+        self.tableWidget.setColumnCount(len(header_names))
+        self.tableWidget.setHorizontalHeaderLabels(header_names)
+        self.tableWidget.horizontalHeader().sectionClicked.connect(self.table_header_on_click)
+        self.tableWidget.setColumnWidth(0, 250)
+        self.tableWidget.setColumnWidth(3, 50)
+        self.tableWidget.setColumnWidth(4, 70)
         count = 0
         # Populate table
-        for entry in book_db.book_entries:
+        for entry in book_entries:
             self.tableWidget.setItem(count,0, QTableWidgetItem(entry.title))
             authors = stringListToCommaSeparatedString(entry.authors)
             self.tableWidget.setItem(count,1, QTableWidgetItem(authors))
@@ -96,23 +117,13 @@ class App(QWidget):
         self.book_db.sortByAttr(logicalIndex)
         self.populateTable()
 
-    def createTableFromEntries(self, book_entries):
+    def createTable(self):
         self.tableWidget = QTableWidget()
-        self.tableWidget.setRowCount(len(book_entries))
-        self.tableWidget.setColumnWidth(0, 250)
-        self.tableWidget.setColumnWidth(3, 50)
-        self.tableWidget.setColumnWidth(4, 70)
-        self.tableWidget.cellClicked.connect(self.table_on_click)
-        header_names = self.book_db.getDisplayColumnNames()
-        self.tableWidget.setColumnCount(len(header_names))
-        self.tableWidget.setHorizontalHeaderLabels(header_names)
-        self.tableWidget.horizontalHeader().sectionClicked.connect(self.table_header_on_click)
         self.populateTable()
-
 
     @pyqtSlot()
     def add_on_click(self):
-        new_index = len(self.book_db.book_entries)
+        new_index = len(self.book_db.getBookEntries())
         isbn, okPressed = QInputDialog.getText(self, "Add book", "ISBN:", QLineEdit.Normal, "")
         if okPressed and isbn != '':
             entry = BookEntry()
